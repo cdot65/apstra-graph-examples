@@ -1,6 +1,8 @@
 # Apstra Graph Explorer Examples
 
-## Find loopback interface with a specific IP address
+## Loopbacks
+
+### Find loopback interface with a specific IP address
 
 ```python
 match(
@@ -11,7 +13,7 @@ match(
 )
 ```
 
-## Find associated loopbacks on all switches in a specified VRF
+### Find associated loopbacks on all switches in a specified VRF
 
 ```python
 match(
@@ -25,17 +27,19 @@ match(
 )
 ```
 
-## Find Systems with Interfaces connected as links
+## Interfaces
+
+### Find Systems with Interfaces connected as links
 
 ```python
 node('system', name='system')
-  .out(hosted_interfaces)
+  .out('hosted_interfaces')
   .node('interface', name='interface')
   .out('link')
   .node('link', name='link')
 ```
 
-## Find Systems with Interfaces: spines edition
+### Find routed interfaces on spine switches
 
 ```python
 node('system', role='spine', name='system')
@@ -43,7 +47,7 @@ node('system', role='spine', name='system')
   .node('interface', if_type='ip', name='interface')
 ```
 
-## Count number of fabric links on spines
+### Count number of fabric links on spines
 
 ```python
 match(
@@ -52,10 +56,6 @@ match(
     .node('interface', name='leaf_intf')
     .out('link')
     .node('link', role='spine_leaf')
-    .in_('link')
-    .node('interface')
-    .in_('hosted_interfaces')
-    .node('system', role='leaf')
 )
 ```
 
@@ -75,7 +75,19 @@ match(
 )
 ```
 
-## Find all ASN within fabric
+```python
+match(
+  node('system', role='leaf', deploy_mode='deploy', name='system')
+    .out('hosted_interfaces')
+    .node('interface', name='leaf_intf')
+    .out('link')
+    .node('link', role='spine_leaf')
+)
+```
+
+## BGP
+
+### Find all ASN within fabric
 
 ```python
 match(
@@ -83,34 +95,7 @@ match(
 )
 ```
 
-## Find all nodes of a MLAG
-
-```python
-match(
-     node('domain', domain_type='mlag', name='domain')
-     .out('composed_of_interfaces')
-     .node('interface', name='interface', if_type='svi')
-     .out('member_of_vn_instance')
-     .node('vn_instance', name='vn_instance'),
-      
-     node(name='vn_instance')
-     .out('instantiates')
-     .node('virtual_network', name='virtual_network')
-)
-```
-
-## peer links
-
-```python
-match(node('system', role='leaf', deploy_mode='deploy', name='system')
-.out('hosted_interfaces')
-.node('interface', name='leaf_intf')
-.out('link')
-.node('link', role='leaf_peer_link')
-)
-```
-
-## BGP peering domain query
+### Find all ASNs with Spine Loopbacks within the BGP peering domain
 
 ```python
 match(
@@ -122,11 +107,11 @@ match(
 )
 ```
 
-## security zone BGP peering query
+### Find ASN, Loopbacks, Systems, Security Zones, and SZ instances
 
 ```python
 match(
-    node('security_zone', name='sz')
+  node('security_zone', name='sz')
     .out('instantiated_by')
     .node('sz_instance', name='sz_inst')
     .out('member_interfaces')
@@ -135,28 +120,38 @@ match(
     .node('system', role='leaf', name='system')
     .in_('composed_of_systems')
     .node('domain', domain_type='autonomous_system', name='domain'),
+)
+```
 
-    node(name='sz_inst')
+## security zone BGP peering query
+
+```python
+match(
+  node('security_zone', name='sz')
+    .out('instantiated_by')
+    .node('sz_instance', name='sz_inst')
     .out('member_interfaces')
-    .node('interface', if_type='subinterface',
-          name='subinterface')
+    .node('interface', if_type='loopback', name='loopback')
+    .in_('hosted_interfaces')
+    .node('system', role='leaf', name='system')
+    .in_('composed_of_systems')
+    .node('domain', domain_type='autonomous_system', name='domain'),
+  node(name='sz_inst')
+    .out('member_interfaces')
+    .node('interface', if_type='subinterface', name='subinterface')
     .out('link')
     .node('link', name='link', link_type='logical_link')
     .in_('link')
-    .node('interface', if_type='subinterface',
-          name='remote_subinterface')
+    .node('interface', if_type='subinterface', name='remote_subinterface')
     .in_('composed_of')
     .node('interface', name='remote_interface')
     .in_('hosted_interfaces')
     .node('system', name='remote_system', role='external_router')
     .ensure_different('subinterface', 'remote_subinterface'),
-
-    node(name='subinterface')
+  node(name='subinterface')
     .in_('composed_of')
     .node('interface', name='interface'),
-
-    node('domain', domain_type='autonomous_system',
-         name='remote_domain')
+  node('domain', domain_type='autonomous_system', name='remote_domain')
     .out('composed_of_systems')
     .node(name='remote_system')
     .out('hosted_interfaces')
