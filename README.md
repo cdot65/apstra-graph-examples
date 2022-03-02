@@ -29,9 +29,9 @@ match(
 
 ```python
 node('system', name='system')
-  .out()
+  .out(hosted_interfaces)
   .node('interface', name='interface')
-  .out()
+  .out('link')
   .node('link', name='link')
 ```
 
@@ -39,7 +39,7 @@ node('system', name='system')
 
 ```python
 node('system', role='spine', name='system')
-  .out()
+  .out('hosted_interfaces')
   .node('interface', if_type='ip', name='interface')
 ```
 
